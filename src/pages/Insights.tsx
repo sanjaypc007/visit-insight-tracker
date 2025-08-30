@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, TrendingUp, Users, Clock, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { 
   LineChart, 
   Line, 
@@ -11,21 +13,31 @@ import {
   Tooltip, 
   ResponsiveContainer,
   BarChart,
-  Bar
+  Bar,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 
 const mockChartData = [
-  { name: 'Mon', visits: 12, uniqueVisitors: 8, avgTime: 45 },
-  { name: 'Tue', visits: 19, uniqueVisitors: 15, avgTime: 52 },
-  { name: 'Wed', visits: 8, uniqueVisitors: 6, avgTime: 38 },
-  { name: 'Thu', visits: 15, uniqueVisitors: 12, avgTime: 67 },
-  { name: 'Fri', visits: 25, uniqueVisitors: 20, avgTime: 73 },
-  { name: 'Sat', visits: 18, uniqueVisitors: 14, avgTime: 59 },
-  { name: 'Sun', visits: 22, uniqueVisitors: 18, avgTime: 81 },
+  { name: 'Mon', visits: 12, uniqueVisitors: 8, avgTime: 45, bounceRate: 24, pageViews: 156, conversions: 3.2 },
+  { name: 'Tue', visits: 19, uniqueVisitors: 15, avgTime: 52, bounceRate: 22, pageViews: 189, conversions: 4.1 },
+  { name: 'Wed', visits: 8, uniqueVisitors: 6, avgTime: 38, bounceRate: 31, pageViews: 98, conversions: 2.8 },
+  { name: 'Thu', visits: 15, uniqueVisitors: 12, avgTime: 67, bounceRate: 19, pageViews: 145, conversions: 3.6 },
+  { name: 'Fri', visits: 25, uniqueVisitors: 20, avgTime: 73, bounceRate: 18, pageViews: 267, conversions: 4.8 },
+  { name: 'Sat', visits: 18, uniqueVisitors: 14, avgTime: 59, bounceRate: 26, pageViews: 178, conversions: 3.4 },
+  { name: 'Sun', visits: 22, uniqueVisitors: 18, avgTime: 81, bounceRate: 21, pageViews: 234, conversions: 4.2 },
+];
+
+const bounceRateData = [
+  { name: 'Low (0-20%)', value: 35, fill: 'hsl(var(--analytics-success))' },
+  { name: 'Medium (21-40%)', value: 45, fill: 'hsl(var(--analytics-warning))' },
+  { name: 'High (41%+)', value: 20, fill: 'hsl(var(--analytics-danger))' },
 ];
 
 const Insights = () => {
   const navigate = useNavigate();
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -49,7 +61,10 @@ const Insights = () => {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-card bg-gradient-card border-analytics-primary/20">
+          <Card 
+            className={`shadow-card bg-gradient-card border-analytics-primary/20 cursor-pointer transition-all duration-200 hover:shadow-elevation ${selectedMetric === 'bounceRate' ? 'ring-2 ring-analytics-primary' : ''}`}
+            onClick={() => setSelectedMetric(selectedMetric === 'bounceRate' ? null : 'bounceRate')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Bounce Rate
@@ -62,7 +77,10 @@ const Insights = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-card bg-gradient-card border-analytics-secondary/20">
+          <Card 
+            className={`shadow-card bg-gradient-card border-analytics-secondary/20 cursor-pointer transition-all duration-200 hover:shadow-elevation ${selectedMetric === 'pageViews' ? 'ring-2 ring-analytics-secondary' : ''}`}
+            onClick={() => setSelectedMetric(selectedMetric === 'pageViews' ? null : 'pageViews')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Page Views
@@ -88,7 +106,10 @@ const Insights = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-card bg-gradient-card border-analytics-success/20">
+          <Card 
+            className={`shadow-card bg-gradient-card border-analytics-success/20 cursor-pointer transition-all duration-200 hover:shadow-elevation ${selectedMetric === 'conversions' ? 'ring-2 ring-analytics-success' : ''}`}
+            onClick={() => setSelectedMetric(selectedMetric === 'conversions' ? null : 'conversions')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Conversion Rate
@@ -102,7 +123,7 @@ const Insights = () => {
           </Card>
         </div>
 
-        {/* Charts */}
+        {/* Default Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-card bg-gradient-card">
             <CardHeader>
@@ -159,6 +180,76 @@ const Insights = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Interactive Metric Charts */}
+        {selectedMetric && (
+          <Card className="shadow-card bg-gradient-card">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-foreground">
+                {selectedMetric === 'bounceRate' && 'Bounce Rate Analysis'}
+                {selectedMetric === 'pageViews' && 'Page Views Trend'}
+                {selectedMetric === 'conversions' && 'Conversion Rate Trend'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedMetric === 'bounceRate' && (
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Pie
+                      data={bounceRateData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {bounceRateData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {selectedMetric === 'pageViews' && (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={mockChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar 
+                      dataKey="pageViews" 
+                      fill="hsl(var(--analytics-secondary))"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              
+              {selectedMetric === 'conversions' && (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={mockChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="conversions" 
+                      stroke="hsl(var(--analytics-success))" 
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(var(--analytics-success))", r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
