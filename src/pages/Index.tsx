@@ -11,12 +11,15 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 const Index = () => {
   const navigate = useNavigate();
   const [sessionTime, setSessionTime] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Start session tracking
-  const { sessionId, startTime } = useSessionTracking();
+  // Start session tracking with refresh callback
+  const { sessionId, startTime } = useSessionTracking(() => {
+    setRefreshTrigger(prev => prev + 1);
+  });
   
-  // Get analytics data
-  const { data: analytics, loading: analyticsLoading } = useAnalytics('7d');
+  // Get analytics data with refresh trigger
+  const { data: analytics, loading: analyticsLoading } = useAnalytics('7d', refreshTrigger);
 
   useEffect(() => {
     // Update session time every second

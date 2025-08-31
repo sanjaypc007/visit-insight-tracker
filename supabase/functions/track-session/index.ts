@@ -17,8 +17,11 @@ serve(async (req) => {
     
     const mongoUri = Deno.env.get('MONGODB_URI');
     if (!mongoUri) {
+      console.error('MONGODB_URI environment variable not found');
       throw new Error('MongoDB URI not configured');
     }
+    
+    console.log('Attempting to connect to MongoDB...');
 
     const client = new MongoClient();
     await client.connect(mongoUri);

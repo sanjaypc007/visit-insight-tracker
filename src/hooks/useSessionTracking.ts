@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useSessionTracking = () => {
+export const useSessionTracking = (onSessionUpdate?: () => void) => {
   const sessionIdRef = useRef<string>('');
   const startTimeRef = useRef<number>(0);
   const lastActivityRef = useRef<number>(0);
@@ -40,6 +40,7 @@ export const useSessionTracking = () => {
     const updateActivity = () => {
       lastActivityRef.current = Date.now();
       trackSession('update', lastActivityRef.current);
+      onSessionUpdate?.();
     };
 
     // Track user interactions

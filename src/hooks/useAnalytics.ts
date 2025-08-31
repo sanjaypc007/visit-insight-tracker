@@ -34,7 +34,7 @@ interface AnalyticsData {
   }>;
 }
 
-export const useAnalytics = (timeRange: string = '7d') => {
+export const useAnalytics = (timeRange: string = '7d', triggerRefresh?: number) => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export const useAnalytics = (timeRange: string = '7d') => {
     };
 
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, triggerRefresh]);
 
   const refetch = async () => {
     setLoading(true);

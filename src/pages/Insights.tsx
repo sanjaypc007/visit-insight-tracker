@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, TrendingUp, Users, Clock, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   LineChart, 
   Line, 
@@ -23,7 +23,18 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 const Insights = () => {
   const navigate = useNavigate();
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
-  const { data: analytics, loading } = useAnalytics('7d');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  const { data: analytics, loading, refetch } = useAnalytics('7d', refreshTrigger);
+  
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
