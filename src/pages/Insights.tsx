@@ -18,26 +18,28 @@ import {
   Pie,
   Cell
 } from "recharts";
-
-const mockChartData = [
-  { name: 'Mon', visits: 12, uniqueVisitors: 8, avgTime: 45, bounceRate: 24, pageViews: 156, conversions: 3.2 },
-  { name: 'Tue', visits: 19, uniqueVisitors: 15, avgTime: 52, bounceRate: 22, pageViews: 189, conversions: 4.1 },
-  { name: 'Wed', visits: 8, uniqueVisitors: 6, avgTime: 38, bounceRate: 31, pageViews: 98, conversions: 2.8 },
-  { name: 'Thu', visits: 15, uniqueVisitors: 12, avgTime: 67, bounceRate: 19, pageViews: 145, conversions: 3.6 },
-  { name: 'Fri', visits: 25, uniqueVisitors: 20, avgTime: 73, bounceRate: 18, pageViews: 267, conversions: 4.8 },
-  { name: 'Sat', visits: 18, uniqueVisitors: 14, avgTime: 59, bounceRate: 26, pageViews: 178, conversions: 3.4 },
-  { name: 'Sun', visits: 22, uniqueVisitors: 18, avgTime: 81, bounceRate: 21, pageViews: 234, conversions: 4.2 },
-];
-
-const bounceRateData = [
-  { name: 'Low (0-20%)', value: 35, fill: 'hsl(var(--analytics-success))' },
-  { name: 'Medium (21-40%)', value: 45, fill: 'hsl(var(--analytics-warning))' },
-  { name: 'High (41%+)', value: 20, fill: 'hsl(var(--analytics-danger))' },
-];
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const Insights = () => {
   const navigate = useNavigate();
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const { data: analytics, loading } = useAnalytics('7d');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <div className="text-xl text-muted-foreground">Loading analytics...</div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <div className="text-xl text-muted-foreground">Failed to load analytics data</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -72,7 +74,7 @@ const Insights = () => {
               <TrendingUp className="h-4 w-4 text-analytics-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">24.5%</div>
+              <div className="text-2xl font-bold text-foreground">{analytics.overview.bounceRate}</div>
               <p className="text-xs text-analytics-success">-2.1% from last week</p>
             </CardContent>
           </Card>
@@ -88,7 +90,7 @@ const Insights = () => {
               <BarChart3 className="h-4 w-4 text-analytics-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">1,247</div>
+              <div className="text-2xl font-bold text-foreground">{analytics.overview.totalPageViews}</div>
               <p className="text-xs text-analytics-success">+15.3% from last week</p>
             </CardContent>
           </Card>
@@ -101,7 +103,7 @@ const Insights = () => {
               <Clock className="h-4 w-4 text-analytics-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">4:23</div>
+              <div className="text-2xl font-bold text-foreground">{analytics.overview.avgSessionTime}</div>
               <p className="text-xs text-analytics-success">+8.2% from last week</p>
             </CardContent>
           </Card>
@@ -117,7 +119,7 @@ const Insights = () => {
               <Users className="h-4 w-4 text-analytics-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">3.2%</div>
+              <div className="text-2xl font-bold text-foreground">{analytics.overview.conversionRate}</div>
               <p className="text-xs text-analytics-warning">-0.5% from last week</p>
             </CardContent>
           </Card>
@@ -133,7 +135,7 @@ const Insights = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={mockChartData}>
+                <LineChart data={analytics.chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -165,7 +167,7 @@ const Insights = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={mockChartData}>
+                <BarChart data={analytics.chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -196,7 +198,7 @@ const Insights = () => {
                 <ResponsiveContainer width="100%" height={400}>
                   <PieChart>
                     <Pie
-                      data={bounceRateData}
+                      data={analytics.bounceRateData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -205,7 +207,7 @@ const Insights = () => {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {bounceRateData.map((entry, index) => (
+                      {analytics.bounceRateData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
@@ -216,7 +218,7 @@ const Insights = () => {
               
               {selectedMetric === 'pageViews' && (
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={mockChartData}>
+                  <BarChart data={analytics.chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -232,7 +234,7 @@ const Insights = () => {
               
               {selectedMetric === 'conversions' && (
                 <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={mockChartData}>
+                  <LineChart data={analytics.chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="name" />
                     <YAxis />

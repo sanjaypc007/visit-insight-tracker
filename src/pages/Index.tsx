@@ -5,24 +5,21 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { Eye, Users, Clock, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useSessionTracking } from "@/hooks/useSessionTracking";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState("");
-  const [startTime] = useState(Date.now());
   const [sessionTime, setSessionTime] = useState(0);
+  
+  // Start session tracking
+  const { sessionId, startTime } = useSessionTracking();
+  
+  // Get analytics data
+  const { data: analytics, loading: analyticsLoading } = useAnalytics('7d');
 
-  // Generate or retrieve user ID
   useEffect(() => {
-    let storedUserId = localStorage.getItem("analyticsUserId");
-    if (!storedUserId) {
-      storedUserId = generateUserId();
-      localStorage.setItem("analyticsUserId", storedUserId);
-      localStorage.setItem("firstVisit", new Date().toLocaleString());
-    }
-    setUserId(storedUserId);
-
-    // Track session time
+    // Update session time every second
     const interval = setInterval(() => {
       setSessionTime(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
@@ -30,20 +27,11 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  const generateUserId = () => {
-    return Math.random().toString(36).substr(2, 9);
-  };
-
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-
-  const firstVisit = localStorage.getItem("firstVisit") || new Date().toLocaleString();
-
-  // Mock data - in real app this would come from your backend
-  const mockTrafficData = [];
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -59,35 +47,38 @@ const Index = () => {
         </div>
 
         {/* Welcome Banner */}
-        <WelcomeBanner userId={userId} firstVisit={firstVisit} />
+        <WelcomeBanner 
+          userId={sessionId.split('-')[0]?.substring(0, 8) || 'Loading...'} 
+          firstVisit={new Date().toLocaleString()} 
+        />
 
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnalyticsCard
-            title="Today's Visits"
-            value="0"
-            subtitle="Total page loads"
+            title="Total Sessions"
+            value={analyticsLoading ? "Loading..." : analytics?.overview.totalSessions.toString() || "0"}
+            subtitle="Total sessions today"
             icon={Eye}
             color="primary"
           />
           <AnalyticsCard
             title="Unique Visitors"
-            value="0"
-            subtitle="Distinct users today"
+            value={analyticsLoading ? "Loading..." : analytics?.overview.uniqueVisitors.toString() || "0"}
+            subtitle="Distinct users"
             icon={Users}
             color="secondary"
           />
           <AnalyticsCard
-            title="Avg. View Time"
-            value="0s"
-            subtitle="Per visit"
+            title="Avg. Session"
+            value={analyticsLoading ? "Loading..." : analytics?.overview.avgSessionTime || "0:00"}
+            subtitle="Per session"
             icon={Clock}
             color="accent"
           />
           <AnalyticsCard
-            title="New Visitors"
-            value="0"
-            subtitle="First-time users"
+            title="Page Views"
+            value={analyticsLoading ? "Loading..." : analytics?.overview.totalPageViews.toString() || "0"}
+            subtitle="Total page views"
             icon={UserPlus}
             color="success"
           />
@@ -102,13 +93,20 @@ const Index = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Session ID</p>
-              <p className="font-mono text-sm">{userId}</p>
+              <p className="font-mono text-sm">{sessionId.substring(0, 8)}...</p>
             </div>
           </div>
         </div>
 
         {/* Traffic Table */}
-        <TrafficTable data={mockTrafficData} />
+        <TrafficTable 
+          data={analytics?.recentSessions.map(session => ({
+            date: new Date(session.timestamp).toLocaleDateString(),
+            visits: session.pageViews,
+            uniqueVisitors: 1,
+            avgViewTime: session.duration
+          })) || []} 
+        />
 
         {/* Show Detailed Insights Button */}
         <div className="text-center">
